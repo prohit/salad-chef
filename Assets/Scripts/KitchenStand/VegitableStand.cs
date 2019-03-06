@@ -4,6 +4,6 @@ public class VegitableStand : KitchenStand
     protected override void Init()
     {
         base.Init();
-        currentState = KitchenStandState.CONATIN_VEGITABLE;
+        currentState = KitchenStandState.CONATIN_VEGETABLE;
     }
 }

@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 public class KitchenStand : MonoBehaviour
 {
@@ -17,7 +16,7 @@ public class KitchenStand : MonoBehaviour
 
     protected virtual void Init() { }
 
-    protected virtual void Execute(Command command) { }
+    public virtual void Execute(Command command, ICarrier carrier = null) { }
 
     //called when player comes in contact with this stand
     public void SetPlayerContactEnable(bool enable)

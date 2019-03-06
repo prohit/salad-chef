@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
+﻿
 public class PlateStand : KitchenStand
 {
     protected override void Init()
@@ -10,19 +7,19 @@ public class PlateStand : KitchenStand
         currentState = KitchenStandState.CONTAIN_PLATE;
     }
 
-    protected override void Execute(Command command)
+    public override void Execute(Command command, ICarrier carrier = null)
     {
-        base.Execute(command);
+        base.Execute(command, carrier);
         switch(currentState)
         {
             case KitchenStandState.CONTAIN_PLATE:
                 if (command == Command.DROP)
                 {
-                    currentState = KitchenStandState.CONATIN_VEGITABLE; //ready to pick up
+                    currentState = KitchenStandState.CONATIN_VEGETABLE; //ready to pick up
                 }
                 break;
 
-            case KitchenStandState.CONATIN_VEGITABLE:
+            case KitchenStandState.CONATIN_VEGETABLE:
                 if(command == Command.PICKUP)
                 {
                     currentState = KitchenStandState.CONTAIN_PLATE;
