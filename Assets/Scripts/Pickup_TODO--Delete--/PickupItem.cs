@@ -1,13 +1,17 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 
-public class PickupItem : ScriptableObject
+public class PickupItem : MonoBehaviour
 {
+    public float ChoppingTime;
+    public virtual void SetChopping(bool enable) { }
+    /*
     [SerializeField] GameObject Prefab;
     [SerializeField] Image icon;
     public Image Icon { get { return icon; } }
 
     GameObject item;
+
+    public float ChoppingTime;
 
     public GameObject GetItem()
     {
@@ -22,4 +26,5 @@ public class PickupItem : ScriptableObject
         item = Instantiate(Prefab);
         return item;
     }
+    */
 }

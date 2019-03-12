@@ -1,30 +1,51 @@
-﻿
+﻿using UnityEngine;
+
 public class PlateStand : KitchenStand
 {
+    [SerializeField] PlateItem platePrefab;
+
+    /*
     protected override void Init()
     {
         base.Init();
-        currentState = KitchenStandState.CONTAIN_PLATE;
+        currentState = KitchenStandState.EMPTY;
     }
+    */
 
-    public override void Execute(Command command, ICarrier carrier = null)
+    public override bool Execute(Command command, Carrier playerCarrier = null)
     {
-        base.Execute(command, carrier);
+        bool result = base.Execute(command, playerCarrier);
         switch(currentState)
         {
-            case KitchenStandState.CONTAIN_PLATE:
+            case KitchenStandState.EMPTY:
                 if (command == Command.DROP)
                 {
-                    currentState = KitchenStandState.CONATIN_VEGETABLE; //ready to pick up
+                    PlateItem plate = Instantiate(platePrefab); //TODO use object pooling
+                    plate.AddSalad((SaladItem)playerCarrier.GetCarryingItem());
+                    currentState = KitchenStandState.CONTAIN_SALAD; //ready to pick up
+                    carrier.OnItemPickup(plate);
+                    playerCarrier.OnItemDrop();
+                    result = true;
                 }
                 break;
 
-            case KitchenStandState.CONATIN_VEGETABLE:
+            case KitchenStandState.CONTAIN_SALAD:
                 if(command == Command.PICKUP)
                 {
-                    currentState = KitchenStandState.CONTAIN_PLATE;
+                    currentState = KitchenStandState.EMPTY;
+                    playerCarrier.OnItemPickup(carrier.GetCarryingItem());
+                    carrier.OnItemDrop();
+                    result = true;
+                }
+                else if(command == Command.DROP)
+                {
+                    PlateItem plate = (PlateItem)carrier.GetCarryingItem();
+                    plate.AddSalad((SaladItem)playerCarrier.GetCarryingItem());
+                    playerCarrier.OnItemDrop();
+                    result = true;
                 }
                 break;
         }
+        return result;
     }
 }

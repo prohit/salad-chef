@@ -1,32 +1,52 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class Player : MonoBehaviour
 {
+    [Header("Input")]
+    [SerializeField] string horizontalAxis;
+    [SerializeField] string verticalAxis;
+    [SerializeField] KeyCode pickupDropKey;
+    [SerializeField] KeyCode choppingKey;
+
+    [Header("Speed")]
     [SerializeField] float moveSpeed = 6.0f;
     [SerializeField] float rotateSpeed = 10.0f;
+
+    [Header("Interaction")]
     [SerializeField] LayerMask kitchenStandLayer;
     [SerializeField] float contactDistance = 2f;
+    [SerializeField] int vegCarryLimit = 2;
     CharacterController characterController;
     KitchenStand currentStandInContact = null;
-    PlayerState currentState;
-    PlayerCarrier carrier;
+    [SerializeField] PlayerState currentState;
+    Carrier carrier;
 
     // Start is called before the first frame update
     void Start()
     {
         characterController = GetComponent<CharacterController>() ?? gameObject.AddComponent<CharacterController>();
-        carrier = GetComponent<PlayerCarrier>() ?? gameObject.AddComponent<PlayerCarrier>();
+        //carrier = GetComponent<PlayerCarrier>() ?? gameObject.AddComponent<PlayerCarrier>();
+        carrier = GetComponent<Carrier>();
+    }
+
+    void Move()
+    {
+        Vector3 dir = new Vector3(Input.GetAxis(horizontalAxis), 0, Input.GetAxis(verticalAxis)).normalized;
+        characterController.Move(dir * moveSpeed * Time.deltaTime);
+        transform.forward = Vector3.Slerp(transform.forward, dir, rotateSpeed * Time.deltaTime);
     }
 
     // Update is called once per frame
     void Update()
     {
-        Vector3 dir = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
-        characterController.Move(dir * moveSpeed * Time.deltaTime);
-        transform.forward = Vector3.Slerp(transform.forward, dir, rotateSpeed * Time.deltaTime);
-        ProcessCommands();
+        if (currentState != PlayerState.CHOPPING)
+        {
+            Move();
+            ProcessCommands();
+        }
     }
 
     private void FixedUpdate()
@@ -42,14 +62,18 @@ public class Player : MonoBehaviour
         Debug.DrawRay(transform.position, result ? hit.transform.position : transform.forward, result ? Color.red : Color.green);    
         if(result)
         {
-            var kitchenStand = hit.collider.GetComponent<KitchenStand>();
+            var kitchenStand = hit.collider.GetComponentInParent<KitchenStand>();
             if (kitchenStand != null)
             {
                 //Debug.Log("Kitchen Stand: " + hit.collider.name);
-                kitchenStand.SetPlayerContactEnable(true);
+
                 if(!(currentStandInContact == null || currentStandInContact == kitchenStand))
                 {
                     currentStandInContact.SetPlayerContactEnable(false);
+                }
+                else
+                {
+                    kitchenStand.SetPlayerContactEnable(true);
                 }
                 currentStandInContact = kitchenStand;
             }
@@ -68,22 +92,97 @@ public class Player : MonoBehaviour
     {
         if(currentStandInContact != null)
         {
-            if (currentState == PlayerState.CHOPPING) return;
-
-            if(Input.GetKey(KeyCode.E)) 
+            if(Input.GetKeyDown(pickupDropKey)) 
             {
-                //if player hand is empty, it pickup from kitchen stand
-                //if carrying anything it will drop on kitchen stand
-                currentStandInContact.Execute((currentState == PlayerState.EMPTY_HAND) ? Command.PICKUP : Command.DROP, carrier);
-            }
-            else if(Input.GetKey(KeyCode.R))
-            {
-                //if in contact with chopping stand and state is empty_hand start chopping
-                if(currentState == PlayerState.EMPTY_HAND && currentStandInContact is ChoppingStand)
+                Debug.Log("Command Pickup/Drop");
+                if (carrier.IsCarrying())
                 {
-                    currentStandInContact.Execute(Command.CHOPPING);
+                    //if player can carry it will pickup item from vegetable stand otherwise it will drop the first item
+                    if ( currentStandInContact is VegetableStand && carrier.GetCarryingItem().Type == PickableType.VEGETABLE && carrier.ItemsCount() < vegCarryLimit)
+                    {
+                        Debug.Log("Carrying, Command Pickup");
+                        PickupMore();
+                    }
+                    else
+                    {
+                        Debug.Log("Carrying, Command Drop");
+                        Drop();
+                    }
+                }
+               else
+                {
+                    Debug.Log("Not Carrying, Command Pickup");
+                    Pickup();
                 }
             }
+            else if(Input.GetKeyDown(choppingKey))
+            {
+                Chopping();
+            }
+        }
+    }
+
+    void Pickup()
+    {
+        bool success = currentStandInContact.Execute(Command.PICKUP, carrier);
+        if(success)
+        {
+            if (currentStandInContact is VegetableStand) currentState = PlayerState.CARRYING_VEGETABLE;
+            else if (currentStandInContact is ChoppingStand) currentState = PlayerState.CARRYING_CHOPPED_VEGETABLE;
+            else if (currentStandInContact is PlateStand) currentState = PlayerState.CARRYING_PLATE;
+        }     
+    }
+
+    void PickupMore()
+    {
+        bool success = currentStandInContact.Execute(Command.PICKUP, carrier);
+        if (success)
+        {
+            currentState = PlayerState.CARRYING_VEGETABLE;
+        }
+        Debug.Log("Current state: " + currentState);
+    }
+
+    void Drop()
+    {
+        if((currentState == PlayerState.CARRYING_VEGETABLE && currentStandInContact is ChoppingStand)
+            || (currentState == PlayerState.CARRYING_CHOPPED_VEGETABLE && currentStandInContact is PlateStand)
+            || (currentState == PlayerState.CARRYING_PLATE && currentStandInContact is CustomerStand))
+        {
+            bool success = currentStandInContact.Execute(Command.DROP, carrier);
+            if (success && carrier.IsCarrying() == false)
+            {
+                currentState = PlayerState.EMPTY_HAND;
+            }
+            //TODO else condition
+        }
+        Debug.Log("Current state: " + currentState);
+    }
+
+    void Chopping()
+    {
+        Debug.Log("Current state: " + currentState);
+        //if in contact with chopping stand and state is empty_hand start chopping
+        if (currentStandInContact is ChoppingStand && currentState == PlayerState.EMPTY_HAND || currentState == PlayerState.CARRYING_VEGETABLE)
+        {
+            bool success = currentStandInContact.Execute(Command.CHOPPING);
+            if (success)
+            {
+                ((ChoppingStand)currentStandInContact).AddChoppingDoneEvent(OnChoppingDone);
+                currentState = PlayerState.CHOPPING;
+            }
+        }
+    }
+
+    public void OnChoppingDone()
+    {
+        if (carrier.IsCarrying())
+        {
+            currentState = PlayerState.CARRYING_VEGETABLE;
+        }
+        else
+        {
+            currentState = PlayerState.EMPTY_HAND;
         }
     }
 }

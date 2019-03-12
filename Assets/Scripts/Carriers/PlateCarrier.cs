@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class KitchenCarrier : MonoBehaviour
+public class PlateCarrier : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()

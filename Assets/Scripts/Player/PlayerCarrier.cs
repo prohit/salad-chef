@@ -20,14 +20,18 @@ public class PlayerCarrier : MonoBehaviour, ICarrier
 
     public void OnItemDrop()
     {
-        Assert.IsTrue(carryingItems.Count == 0, "Player have no item to drop!!");
+        Assert.IsFalse(carryingItems.Count == 0, "Player have no item to drop!!");
         carryingItems.Dequeue();
+        Debug.Log("Player dropped an item");
     }
 
     public void OnItemPickup(PickupItem item)
     {
-        var itemTransform = item.GetItem().transform;
-        itemTransform.SetParent(carryTransform);
+        var itemTransform = item.transform;
+        itemTransform.SetParent(carryTransform, false);
+        carryingItems.Enqueue(item);
+        Debug.Log("Item pickup by player: " + item.name);
+        Debug.Log("Items in player hand: " + carryingItems.Count);
     }
 
     public bool IsCarrying()
@@ -37,7 +41,8 @@ public class PlayerCarrier : MonoBehaviour, ICarrier
 
     public PickupItem GetCarryingItem()
     {
-        Assert.AreEqual(carryingItems.Count, 0, "Chopping hand is empty!!");
+        Debug.Log("Items in player hand: " + carryingItems.Count);
+        Assert.AreNotEqual(carryingItems.Count, 0, "Player hand is empty!!");
         return carryingItems.Peek();
     }
 }
