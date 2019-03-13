@@ -19,10 +19,15 @@ public class Player : MonoBehaviour
     [SerializeField] LayerMask kitchenStandLayer;
     [SerializeField] float contactDistance = 2f;
     [SerializeField] int vegCarryLimit = 2;
+
     CharacterController characterController;
     KitchenStand currentStandInContact = null;
-    [SerializeField] PlayerState currentState;
+    [SerializeField] PlayerState currentState; //TODO remove serializefield
     Carrier carrier;
+
+    Action<int> updateScoreEvent;
+    Action<int> updateTimeEvent;
+    Action<Command, Sprite> carryVegetableEvent;
 
     // Start is called before the first frame update
     void Start()
@@ -127,7 +132,11 @@ public class Player : MonoBehaviour
         bool success = currentStandInContact.Execute(Command.PICKUP, carrier);
         if(success)
         {
-            if (currentStandInContact is VegetableStand) currentState = PlayerState.CARRYING_VEGETABLE;
+            if (currentStandInContact is VegetableStand)
+            {
+                currentState = PlayerState.CARRYING_VEGETABLE;
+                carryVegetableEvent?.Invoke(Command.PICKUP, ((VegetableItem)carrier.GetLastCarryingItem()).Icon);
+            }
             else if (currentStandInContact is ChoppingStand) currentState = PlayerState.CARRYING_CHOPPED_VEGETABLE;
             else if (currentStandInContact is PlateStand) currentState = PlayerState.CARRYING_PLATE;
         }     
@@ -139,6 +148,7 @@ public class Player : MonoBehaviour
         if (success)
         {
             currentState = PlayerState.CARRYING_VEGETABLE;
+            carryVegetableEvent?.Invoke(Command.PICKUP, ((VegetableItem)carrier.GetLastCarryingItem()).Icon);
         }
         Debug.Log("Current state: " + currentState);
     }
@@ -150,10 +160,23 @@ public class Player : MonoBehaviour
             || (currentState == PlayerState.CARRYING_PLATE && currentStandInContact is CustomerStand))
         {
             bool success = currentStandInContact.Execute(Command.DROP, carrier);
+            if(success)
+            {
+                if (currentState == PlayerState.CARRYING_VEGETABLE)
+                {
+                    carryVegetableEvent?.Invoke(Command.DROP, null);
+                }
+                if(carrier.IsCarrying() == false)
+                {
+                    currentState = PlayerState.EMPTY_HAND;
+                }
+            }
+            /*
             if (success && carrier.IsCarrying() == false)
             {
                 currentState = PlayerState.EMPTY_HAND;
             }
+            */
             //TODO else condition
         }
         Debug.Log("Current state: " + currentState);
@@ -176,6 +199,7 @@ public class Player : MonoBehaviour
 
     public void OnChoppingDone()
     {
+        ((ChoppingStand)currentStandInContact).RemoveChoppingDoneEvent(OnChoppingDone);
         if (carrier.IsCarrying())
         {
             currentState = PlayerState.CARRYING_VEGETABLE;
@@ -183,6 +207,46 @@ public class Player : MonoBehaviour
         else
         {
             currentState = PlayerState.EMPTY_HAND;
+        }
+    }
+
+
+    public void AddScoreUpdateEvent(Action<int> pEvent)
+    {
+        updateScoreEvent += pEvent;
+    }
+
+    public void RemoveScoreUpdateEvent(Action<int> pEvent)
+    {
+        if(updateScoreEvent != null)
+        {
+            updateScoreEvent -= pEvent;
+        }
+    }
+
+    public void AddUpdateTimeEvent(Action<int> pEvent)
+    {
+        updateTimeEvent += pEvent;
+    }
+
+    public void RemoveUpdateTimeEvent(Action<int> pEvent)
+    {
+        if(updateTimeEvent != null)
+        {
+            updateTimeEvent -= pEvent;
+        }
+    }
+
+    public void AddCarryVegetableEvent(Action<Command, Sprite> pEvent)
+    {
+        carryVegetableEvent += pEvent;
+    }
+
+    public void RemoveCarryVegetableEvent(Action<Command, Sprite> pEvent)
+    {
+        if(carryVegetableEvent != null)
+        {
+            carryVegetableEvent -= pEvent;
         }
     }
 }
