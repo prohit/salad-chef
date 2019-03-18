@@ -1,4 +1,6 @@
-Salad Chef
+Title: Salad Chef
+
+Unity version: 2018.3.0f2
 
 Player 1 control:
 - W, A, S, D to move
