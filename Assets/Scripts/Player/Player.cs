@@ -17,57 +17,82 @@ public class Player : MonoBehaviour
 
     [Header("Interaction")]
     [SerializeField] LayerMask kitchenStandLayer;
-    [SerializeField] float contactDistance = 2f;
+    //[SerializeField] float contactDistance = 2f;
     [SerializeField] int vegCarryLimit = 2;
 
+    [Header("Reward")]
+    [SerializeField] LayerMask rewardLayerMask;
+    [SerializeField] float speedBoostDuration = 60; //seconds
+
     CharacterController characterController;
-    KitchenStand currentStandInContact = null;
-    [SerializeField] PlayerState currentState; //TODO remove serializefield
+    KitchenStand currentStandInContact;
+    PlayerState currentState;
     Carrier carrier;
+    float speedBoost;
 
     Action<int> updateScoreEvent;
     Action<int> updateTimeEvent;
     Action<Command, Sprite> carryVegetableEvent;
 
+    public bool IsTimeOver;
+
     // Start is called before the first frame update
     void Start()
     {
         characterController = GetComponent<CharacterController>() ?? gameObject.AddComponent<CharacterController>();
-        //carrier = GetComponent<PlayerCarrier>() ?? gameObject.AddComponent<PlayerCarrier>();
         carrier = GetComponent<Carrier>();
     }
 
     void Move()
     {
-        Vector3 dir = new Vector3(Input.GetAxis(horizontalAxis), 0, Input.GetAxis(verticalAxis)).normalized;
-        characterController.Move(dir * moveSpeed * Time.deltaTime);
+        Vector3 dir = new Vector3(Input.GetAxisRaw(horizontalAxis), 0, Input.GetAxisRaw(verticalAxis)).normalized;
+        characterController.Move(dir * (moveSpeed + speedBoost) * Time.deltaTime);
         transform.forward = Vector3.Slerp(transform.forward, dir, rotateSpeed * Time.deltaTime);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (currentState != PlayerState.CHOPPING)
+        if (!IsTimeOver)
         {
-            Move();
-            ProcessCommands();
+            if (currentState != PlayerState.CHOPPING)
+            {
+                Move();
+                ProcessCommands();
+            }
         }
     }
 
     private void FixedUpdate()
     {
-        CheckForKitchenStands();
+        if (!IsTimeOver)
+        {
+            CheckForKitchenStands();
+            CheckForRewards();
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.layer == kitchenStandLayer)
+        {
+            currentStandInContact.SetPlayerContactEnable(false);
+            currentStandInContact = null;
+        }
     }
 
     //do the physics calculation to check user is in contact with any kitchen stand
     void CheckForKitchenStands()
     {
-        RaycastHit hit;
-        var result = Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, contactDistance, kitchenStandLayer);
-        Debug.DrawRay(transform.position, result ? hit.transform.position : transform.forward, result ? Color.red : Color.green);    
-        if(result)
+        //RaycastHit hit;
+        //var result = Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, contactDistance, kitchenStandLayer);
+        //Debug.DrawRay(transform.position, result ? hit.transform.position : transform.forward, result ? Color.red : Color.green);
+        var colliders = Physics.OverlapCapsule(transform.position + Vector3.down * characterController.height / 2,
+            transform.position + Vector3.up * characterController.height / 2, characterController.radius, kitchenStandLayer);
+           
+        if(colliders?.Length > 0)
         {
-            var kitchenStand = hit.collider.GetComponentInParent<KitchenStand>();
+            var kitchenStand = colliders[0].GetComponentInParent<KitchenStand>();
             if (kitchenStand != null)
             {
                 //Debug.Log("Kitchen Stand: " + hit.collider.name);
@@ -93,6 +118,23 @@ public class Player : MonoBehaviour
         }
     }
 
+    //check user is in contact with rewards
+    void CheckForRewards()
+    {    
+        var colliders = Physics.OverlapCapsule(transform.position + Vector3.down * characterController.height / 2,
+        transform.position + Vector3.up * characterController.height / 2, characterController.radius, rewardLayerMask);
+        if (colliders?.Length > 0)
+        {
+            var reward = colliders[0].GetComponentInParent<Reward>();// hit.collider.GetComponentInParent<Reward>();
+            if (reward.Owner == this)
+            {
+                colliders[0].enabled = false;
+                CollectReward(reward);
+            }
+        }
+    }
+
+    //process user commands - Pickup, Drop, Chopping
     void ProcessCommands()
     {
         if(currentStandInContact != null)
@@ -208,6 +250,33 @@ public class Player : MonoBehaviour
         {
             currentState = PlayerState.EMPTY_HAND;
         }
+    }
+
+    void CollectReward(Reward reward)
+    {
+        Debug.Log("Collect Reward: " + reward.Type);
+        switch (reward.Type)
+        {
+            case RewardType.SCORE:
+                updateScoreEvent.Invoke((int)reward.RewardAmount);
+                break;
+
+            case RewardType.TIME:
+                updateTimeEvent.Invoke((int)reward.RewardAmount);
+                break;
+
+            case RewardType.SPEED:
+                speedBoost = reward.RewardAmount;
+                StartCoroutine(DisableSpeedBoost());
+                break;
+        }
+        Destroy(reward.gameObject, 0.1f);
+    }
+
+    IEnumerator DisableSpeedBoost()
+    {
+        yield return new WaitForSeconds(speedBoostDuration);
+        speedBoost = 0;
     }
 
 

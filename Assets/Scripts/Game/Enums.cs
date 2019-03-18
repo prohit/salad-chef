@@ -35,3 +35,18 @@ public enum VegType
     CUCUMBER,
     CAPSICUM
 }
+
+public enum OrderStatus
+{
+    NOT_SERVED,
+    WRONG_SALAD_SERVED,
+    CORRECT_SALAD_SERVERD,
+    FAST_SERVED
+}
+
+public enum RewardType
+{
+    SPEED,
+    TIME,
+    SCORE
+}

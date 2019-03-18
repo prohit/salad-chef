@@ -1,39 +1,13 @@
-﻿
-using System.Collections.Generic;
-
-public struct SaladOrder
-{
-    string orderName;
-
-    public SaladOrder(List<VegType> items)
-    {
-        items.Sort();
-        orderName = "";
-        foreach(var item in items)
-        {
-            orderName += item + "_";
-        }
-    }
-
-    public bool IsCorrectOrder(SaladOrder order)
-    {
-        return (orderName == order.orderName);
-    }
-}
+﻿using UnityEngine;
+using System.Collections;
 
 public class CustomerStand : KitchenStand
 {
-    SaladOrder currentOrder;
+    Customer currentCustomer;
 
     public bool IsEmpty()
     {
         return (currentState == KitchenStandState.EMPTY);
-    }
-
-    public void CustomerArraive(List<VegType> order)
-    {
-        currentOrder = new SaladOrder(order);
-        currentState = KitchenStandState.CUSTOMER_WAITING;
     }
 
     public override bool Execute(Command command, Carrier playerCarrier)
@@ -42,12 +16,13 @@ public class CustomerStand : KitchenStand
         switch(currentState)
         {
             case KitchenStandState.EMPTY: //TODO for test only
+                //do nothing
+                break;
+
             case KitchenStandState.CUSTOMER_WAITING:
                 if(command == Command.DROP)
                 {
-                    currentState = KitchenStandState.CUSTOMER_EATING;
-                    carrier.OnItemPickup(playerCarrier.GetCarryingItem());
-                    playerCarrier.OnItemDrop();
+                    OrderRecieved(playerCarrier);
                     result = true;
                 }
                 break;
@@ -55,8 +30,43 @@ public class CustomerStand : KitchenStand
         return result;
     }
 
-    void OrderRecieved(SaladItem salad)
+    void OrderRecieved(Carrier playerCarrier)
     {
+        PlateItem plate = (PlateItem)playerCarrier.GetCarryingItem();
+        carrier.OnItemPickup(plate);
+        playerCarrier.OnItemDrop();
+        currentCustomer.ProcessOrder(plate.Salad, playerCarrier.GetComponent<Player>());
 
+        //TODO sync state
+        /*
+        if (correctOrder)
+        {
+            currentState = KitchenStandState.CUSTOMER_EATING;
+            Debug.Log(name + " -- correct order - state : " + currentState);
+        }
+        //TODO set state to wrong order
+        */       
+        StartCoroutine(RemovePlate());
+    }
+
+    IEnumerator RemovePlate()
+    {
+        yield return new WaitForSeconds(0.3f);
+        var item = carrier.GetCarryingItem();
+        carrier.OnItemDrop();
+        Destroy(item.gameObject);
+    }
+
+    public void CustomerArrived(Customer customer)
+    {
+        currentState = KitchenStandState.CUSTOMER_WAITING;
+        currentCustomer = customer;
+        Debug.Log(name + " -- customer arrived - state : " + currentState);
+    }
+
+    public void CustomerLeft()
+    {
+        Debug.Log(name + " -- customer left - state : " + currentState);
+        currentState = KitchenStandState.EMPTY;
     }
 }

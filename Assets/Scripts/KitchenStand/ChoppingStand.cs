@@ -89,7 +89,7 @@ public class ChoppingStand : KitchenStand //, ICarrier
                 }
                 else if(command == Command.DROP)
                 {
-                    AdjustVegetables();
+                    //AdjustVegetables();
                     //add raw veg at first position after chopping done
                     carrier.OnItemPickupAtFirst(playerCarrier.GetCarryingItem());
                     playerCarrier.OnItemDrop();
@@ -144,7 +144,7 @@ public class ChoppingStand : KitchenStand //, ICarrier
     void AdjustVegetables()
     {
         var item = carrier.GetCarryingItem();
-        item.transform.position += new Vector3(0.5f, 0, 0);
+        item.transform.position += new Vector3(0.25f, 0, 0);
     }
     /*
     public bool CanCarry()

@@ -44,4 +44,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 1
-  gapBetweenItems: 0.5
+  gapBetweenItems: 0.25
+  VegetableItemTypes: 

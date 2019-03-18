@@ -26,6 +26,8 @@ public class VegetableItem : PickableItem
         if(!enable)
         {
             IsChopped = true;
+            transform.Find("Veg").gameObject.SetActive(false);
+            transform.Find("Chopped").gameObject.SetActive(true);
         }
     }
 }

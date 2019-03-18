@@ -212,9 +212,12 @@ MonoBehaviour:
   kitchenStandLayer:
     serializedVersion: 2
     m_Bits: 512
-  contactDistance: 1
+  contactDistance: 0
   vegCarryLimit: 2
-  currentState: 0
+  rewardLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  speedBoostDuration: 60
 --- !u!114 &3245934911479102697
 MonoBehaviour:
   m_ObjectHideFlags: 0
