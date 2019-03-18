@@ -7,22 +7,9 @@ using UnityEngine;
 public class ChoppingStand : KitchenStand //, ICarrier
 {
     [SerializeField] SaladItem saladPrefab;
-    //[SerializeField] Transform pickupTransform;
     [SerializeField] int carryLimit = 3;
-    //Queue<PickupItem> carryingItems;
-    //List<PickupItem> saladItems;
     [SerializeField] float timeSpentInChopping;
     Action choppingEvent;
-
-    /*
-    protected override void Init()
-    {
-        base.Init();
-        //carryingItems = new Queue<PickupItem>();
-        //saladItems = new List<PickupItem>();
-        currentState = KitchenStandState.EMPTY;
-    }
-    */
 
     //TODO move chopping done event to seperate class
     public void AddChoppingDoneEvent(Action action)
@@ -70,6 +57,7 @@ public class ChoppingStand : KitchenStand //, ICarrier
                 else if(command == Command.PICKUP)
                 {
                     playerCarrier.OnItemPickup(carrier.GetCarryingItem());
+                    carrier.OnItemDrop();
                     if (carrier.IsCarrying() == false)
                     {
                         currentState = KitchenStandState.EMPTY;
@@ -146,35 +134,4 @@ public class ChoppingStand : KitchenStand //, ICarrier
         var item = carrier.GetCarryingItem();
         item.transform.position += new Vector3(0.25f, 0, 0);
     }
-    /*
-    public bool CanCarry()
-    {
-        return (carryLimit < carryingItems.Count);
-    }
-
-    public void OnItemPickup(PickupItem item)
-    {
-        var itemTransform = item.transform;
-        itemTransform.SetParent(pickupTransform, false);
-        carryingItems.Enqueue(item);
-    }
-
-    public void OnItemDrop()
-    {
-        Debug.Log("Chopping stand dropped item, count: " + carryingItems.Count);
-        Assert.IsFalse(carryingItems.Count == 0, "Chopping stand have no item to drop!!");
-        carryingItems.Dequeue();
-    }
-
-    public bool IsCarrying()
-    {
-        return (carryingItems.Count > 0);
-    }
-
-    public PickupItem GetCarryingItem()
-    {
-        Assert.AreNotEqual(carryingItems.Count, 0, "Chopping stand is empty!!");
-        return carryingItems.Peek();
-    }
-    */
 }

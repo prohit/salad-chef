@@ -174,13 +174,33 @@ public class Player : MonoBehaviour
         bool success = currentStandInContact.Execute(Command.PICKUP, carrier);
         if(success)
         {
+            /*
             if (currentStandInContact is VegetableStand)
             {
                 currentState = PlayerState.CARRYING_VEGETABLE;
                 carryVegetableEvent?.Invoke(Command.PICKUP, ((VegetableItem)carrier.GetLastCarryingItem()).Icon);
             }
-            else if (currentStandInContact is ChoppingStand) currentState = PlayerState.CARRYING_CHOPPED_VEGETABLE;
-            else if (currentStandInContact is PlateStand) currentState = PlayerState.CARRYING_PLATE;
+            else if (currentStandInContact is ChoppingStand)
+            {
+                currentState = PlayerState.CARRYING_CHOPPED_VEGETABLE;
+            }
+            else*/ if (currentStandInContact is PlateStand)
+            {
+                currentState = PlayerState.CARRYING_PLATE;
+            }
+            else
+            {
+                var item = carrier.GetLastCarryingItem();
+                if(item is VegetableItem)
+                {
+                    currentState = PlayerState.CARRYING_VEGETABLE;
+                    carryVegetableEvent?.Invoke(Command.PICKUP, ((VegetableItem)carrier.GetLastCarryingItem()).Icon);
+                }
+                else if(item is SaladItem)
+                {
+                    currentState = PlayerState.CARRYING_CHOPPED_VEGETABLE;
+                }
+            }
         }     
     }
 
@@ -199,7 +219,8 @@ public class Player : MonoBehaviour
     {
         if((currentState == PlayerState.CARRYING_VEGETABLE && currentStandInContact is ChoppingStand)
             || (currentState == PlayerState.CARRYING_CHOPPED_VEGETABLE && currentStandInContact is PlateStand)
-            || (currentState == PlayerState.CARRYING_PLATE && currentStandInContact is CustomerStand))
+            || (currentState == PlayerState.CARRYING_PLATE && currentStandInContact is CustomerStand)
+            || currentStandInContact is TrashStand)
         {
             bool success = currentStandInContact.Execute(Command.DROP, carrier);
             if(success)
