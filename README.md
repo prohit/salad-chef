@@ -34,7 +34,7 @@ Next Steps(To be implemented):
 - add animation
 - Proper syncing of all actions
 - Level progression
-	Add more vegetables to create more complex salads
-	Add obstacle in kitchen area to make player movement difficult
-	Placement of different kitchen stands in way to make it more challenging
-	Assistent/Helper AI which will help in some tasks of the player(in single player mode)
+	-- Add more vegetables to create more complex salads
+	-- Add obstacle in kitchen area to make player movement difficult
+	-- Placement of different kitchen stands in way to make it more challenging
+	-- Assistent/Helper AI which will help in some tasks of the player(in single player mode)
