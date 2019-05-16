@@ -1,5 +1,8 @@
 Title: Salad Chef
 
+How to Play:
+Pickup vegatables from vegatbale counter, make Salads and serve hungry customers.
+
 Unity version: 2018.3.0f2
 
 Player 1 control:
